@@ -196,7 +196,7 @@ class Video3DGSApp:
                 controls=[
                     ft.Row(
                         controls=[
-                            ft.Icon(ft.icons.Icons.VIDEOCAM, size=32, color=ft.Colors.BLUE_400),
+                            ft.Icon(ft.icons.VIDEOCAM, size=32, color=ft.Colors.BLUE_400),
                             ft.Text(
                                 "Andrii Shramko 4DGS Generator",
                                 size=24,
@@ -247,7 +247,7 @@ class Video3DGSApp:
         self.video_info_text = ft.Text("No video selected", size=12, color=ft.Colors.GREY_400)
         self.select_video_btn = ft.Button(
             "1. Select Video File",
-            icon=ft.icons.Icons.FOLDER_OPEN,
+            icon=ft.icons.FOLDER_OPEN,
             on_click=self.select_video,
             style=ft.ButtonStyle(
                 color=ft.Colors.WHITE,
@@ -278,7 +278,7 @@ class Video3DGSApp:
         )
         self.select_output_btn = ft.Button(
             "2. Select Output Folder",
-            icon=ft.icons.Icons.FOLDER,
+            icon=ft.icons.FOLDER,
             on_click=self.select_output_folder,
             style=ft.ButtonStyle(
                 color=ft.Colors.WHITE,
@@ -408,7 +408,7 @@ class Video3DGSApp:
         # Generate button - ALWAYS VISIBLE at bottom
         self.generate_btn = ft.Button(
             "3. Generate PLY Sequence",
-            icon=ft.icons.Icons.PLAY_ARROW,
+            icon=ft.icons.PLAY_ARROW,
             on_click=self.start_generation,
             disabled=True,
             style=ft.ButtonStyle(
