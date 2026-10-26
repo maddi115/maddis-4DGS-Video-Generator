@@ -54,3 +54,7 @@ dist/
 *.ckpt
 __pycache__/
 
+output_3dgs/
+*.pt
+run.log
+__pycache__/

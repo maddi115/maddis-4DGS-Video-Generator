@@ -1,0 +1,14 @@
+numpy
+opencv-python
+timm
+einops
+omegaconf
+plyfile
+safetensors
+huggingface_hub
+scipy
+imageio
+imageio-ffmpeg
+pillow-heif
+matplotlib
+gsplat
