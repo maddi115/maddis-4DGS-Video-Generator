@@ -16,7 +16,7 @@ from sharp.utils.gaussians import save_ply
 VIDEO = ROOT / "sample-video" / "walmartvideo.mp4"
 OUT_NAME = "meowvideo"
 CHECKPOINT = ROOT / "sharp_2572gikvuh.pt"
-TEST_FRAMES = 5        # None = all frames, or a number like 5 for a test
+TEST_FRAMES = None        # None = all frames, or a number like 5 for a test
 MAX_BAD_IN_A_ROW = 5      # stop if this many frames in a row come out empty
 TAG = "_Shramko_4DGS_apple-Sharp_Generator_"
 
