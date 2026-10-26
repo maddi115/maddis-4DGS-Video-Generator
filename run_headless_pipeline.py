@@ -17,6 +17,26 @@ from sharp.models import PredictorParams, create_predictor
 from sharp.cli.predict import predict_image, DEFAULT_MODEL_URL
 from sharp.utils.gaussians import save_ply
 
+# SPEED FIX 3: keep SHARP's covariance decomposition on the GPU (remove its .cpu() call).
+import inspect as _inspect
+import sharp.utils.gaussians as _sg3
+_old_line = ".detach().cpu().to(torch.float64)"
+_new_line = ".detach().to(torch.float64)"
+for _name, _fn in list(vars(_sg3).items()):
+    if not (_inspect.isfunction(_fn) and _fn.__module__ == _sg3.__name__):
+        continue
+    try:
+        _src = _inspect.getsource(_fn)
+    except (OSError, TypeError):
+        continue
+    if _old_line in _src:
+        exec(_src.replace(_old_line, _new_line), _sg3.__dict__)
+        _new = _sg3.__dict__[_name]
+        for _m in list(sys.modules.values()):
+            if _m and getattr(_m, "__name__", "").startswith("sharp") and getattr(_m, _name, None) is _fn:
+                setattr(_m, _name, _new)
+        print(f"[+] {_name} now runs on GPU")
+
 # SPEED FIX 2: SHARP's save_ply builds 1.2M Python tuples per frame. Copy the block in one go instead.
 import inspect
 import numpy as np
