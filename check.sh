@@ -1,15 +1,23 @@
 #!/bin/bash
 DIR=/workspace/maddis-4DGS-Video-Generator
 OUT=$DIR/output_3dgs/meowvideo
+TOTAL=2204
 RED='\e[1;31m'; GRN='\e[1;32m'; NC='\e[0m'
 cd $DIR
 
 FILES=$(ls $OUT/*_standard.ply 2>/dev/null)
 done=$(echo "$FILES" | grep -c . )
-echo "Frames:  $done / 2204 ($((done*100/2204))%)"
+echo "Frames:  $done / $TOTAL ($((done*100/TOTAL))%)"
 
 if pgrep -f run_headless_pipeline.py > /dev/null; then
   echo -e "Status:  ${GRN}RUNNING${NC}"
+  rate=$(find $OUT -name '*_standard.ply' -mmin -1 | wc -l)
+  if [ "$rate" -gt 0 ]; then
+    left=$(( (TOTAL - done) / rate ))
+    echo "Speed:   $rate frames/min | about $((left/60))h $((left%60))m left | done around $(TZ=America/Los_Angeles date -d "+$left min" '+%I:%M %p')"
+  else
+    echo "Speed:   measuring... (no frames finished in the last minute)"
+  fi
 else
   echo -e "Status:  ${RED}STOPPED${NC}"
 fi
@@ -24,7 +32,7 @@ else
   echo -e "0-byte:  ${GRN}none${NC}"
 fi
 
-sizes=$(echo "$FILES" | head -n -1 | xargs -r stat -c %s | sort | uniq -c)
+sizes=$(echo "$FILES" | xargs -r stat -c %s | sort | uniq -c)
 if [ $(echo "$sizes" | grep -c .) -gt 1 ]; then
   echo -e "${RED}SIZE MISMATCH (a frame may be cut off):${NC}"
   echo "$sizes"
