@@ -36,3 +36,10 @@ bad=$(grep -c '\[BAD\]' run.log 2>/dev/null)
 if [ "$bad" -gt 0 ]; then echo -e "Bad:     ${RED}$bad frames caught and deleted${NC}"; else echo -e "Bad:     ${GRN}0${NC}"; fi
 
 echo "Last:    $(grep "^\[" run.log | tail -n 1)"
+
+echo
+echo "Commands:"
+echo "  startjob   Start or resume (never duplicates)"
+echo "  stopjob    Stop the job (asks first)"
+echo "  progress   Check once"
+echo "  live       Keep checking every 5 seconds"
