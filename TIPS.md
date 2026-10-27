@@ -1,0 +1,58 @@
+# Tips & Commands
+
+## Fresh pod? Run this first
+1. `cd /workspace && git clone --recurse-submodules https://github.com/maddi115/maddis-4DGS-Video-Generator.git`
+2. `cd maddis-4DGS-Video-Generator && bash setup_pod.sh`
+3. Log out and back in (or run `source ~/.bashrc`)
+
+## Generator commands (video -> splat frames)
+| Command | What it does |
+|---|---|
+| `startjob` | Start or resume (never runs twice) |
+| `stopjob` | Stop the job (asks first, keeps finished frames) |
+| `progress` | Check once: frames, speed, time left, 0-byte and size checks |
+| `live` | Same as progress, updates every 5 seconds |
+
+## Converter commands (splat frames -> Chronosplat SOG)
+| Command | What it does |
+|---|---|
+| `convertjob` | Convert all frames (refuses to run while the generator runs) |
+| `convertjob --dry-run` | Check frames without converting anything |
+| `convertprogress` | Check converter once |
+| `convertlive` | Same, updates every 5 seconds |
+
+Run the converter in the background so logging out doesn't stop it:
+`nohup convertjob > convert.log 2>&1 &`
+
+## Other
+| Command | What it does |
+|---|---|
+| `tips` | Show this page |
+| `claer` | Typo-proof `clear` |
+
+## Safety
+- **Ctrl + C** exits `live`, `convertlive` and log views. It never stops the job.
+- Anything red in `progress` means something needs a look.
+- The job keeps running when you log off or your PC is off. Only stopping the pod stops it.
+- **This pod has no permanent storage.** Download results before you stop the pod.
+- Never paste GitHub tokens into a chat. Use them only in the terminal.
+
+## Download results to your PC
+1. On the pod: `cd /workspace/Chronosplat/data && tar -cf /workspace/meowvideo.tar meowvideo && runpodctl send /workspace/meowvideo.tar`
+2. On the PC (PowerShell, in the Chronosplat folder): `.\runpodctl.exe receive THE-CODE`
+3. Unpack: `tar -xf meowvideo.tar -C data`
+4. Show it: `python tools\index_sequences.py` then `npm run dev`
+- If the download shows 0 MB/s: press Enter in that window (clicking pauses it). If still stuck, Ctrl + C both sides and send again.
+- Get runpodctl for Windows: `Invoke-WebRequest -Uri https://github.com/runpod/runpodctl/releases/latest/download/runpodctl-windows-amd64.exe -OutFile runpodctl.exe`
+
+## Changing to a new video
+These are set for the current video. Change them for a new one:
+- `run_headless_pipeline.py`: `VIDEO` and `OUT_NAME`
+- `check.sh`: `TOTAL` (frame count) and the output folder
+- `convert_on_pod.sh`: `NAME` and `--source-fps` (your video's fps)
+
+## Numbers from the first full run
+- 2,204 frames, 1.2M splats each, 63 MB per raw frame (about 139 GB total)
+- Generator: about 14 frames/min on an RTX 3090 (after speed fixes)
+- Converter: about 90+ frames/min with 12 workers, about 10 MB per SOG frame (about 23 GB total)
+- Need about 200 GB pod disk for a 2,200-frame video

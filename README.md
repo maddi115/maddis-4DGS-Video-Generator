@@ -384,3 +384,14 @@ If you need commercial usage rights:
 
 © 2025 Andrii Shramko. All rights reserved.
 
+
+## How it works (headless RunPod pipeline)
+
+1. **Video in.** A video goes in `sample-video/`.
+2. **Splats per frame.** `run_headless_pipeline.py` sends each frame through Apple's SHARP model (`ml-sharp` submodule) and saves a 3D Gaussian splat file (`.ply`) for each frame. Bad or empty frames are caught and deleted, and the run can resume.
+3. **Convert.** `convert_on_pod.sh` (`convertjob`) uses Chronosplat to compress the frames into SOG format plus a manifest, about 6x smaller.
+4. **View.** Download the converted folder to your PC and play it in Chronosplat in the browser, with a free camera and a timeline.
+
+Speed fixes in `run_headless_pipeline.py` move SHARP's slow CPU steps to the GPU and speed up saving (about 2.3x faster overall).
+
+**New pod?** See [TIPS.md](TIPS.md) for setup (`bash setup_pod.sh`) and all commands.
