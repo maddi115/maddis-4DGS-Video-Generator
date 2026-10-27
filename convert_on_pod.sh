@@ -8,6 +8,11 @@ if pgrep -f run_headless_pipeline.py > /dev/null && [[ " $* " != *" --dry-run "*
   exit 1
 fi
 
+if pgrep -f "tools/convert.py" > /dev/null; then
+  echo "Converter is already running. Not starting a second copy."
+  exit 1
+fi
+
 mkdir -p $CHRONO/raw_data/$NAME
 for f in $SRC/frame_*_standard.ply; do
   n=$(basename "$f" | grep -o '^frame_[0-9]\{6\}')
