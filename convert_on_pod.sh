@@ -15,4 +15,4 @@ for f in $SRC/frame_*_standard.ply; do
 done
 echo "Linked $(ls $CHRONO/raw_data/$NAME | wc -l) frames"
 
-cd $CHRONO && bash tools/seq.sh $NAME --source-fps 60 "$@"
+cd $CHRONO && bash tools/seq.sh $NAME --source-fps 60 --workers 12 "$@"
