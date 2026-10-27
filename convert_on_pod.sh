@@ -21,3 +21,4 @@ done
 echo "Linked $(ls $CHRONO/raw_data/$NAME | wc -l) frames"
 
 cd $CHRONO && bash tools/seq.sh $NAME --source-fps 60 --workers 12 "$@"
+find /workspace/Chronosplat/data/$NAME -name ".*.tmp" -delete 2>/dev/null; echo "Cleaned up temp files."

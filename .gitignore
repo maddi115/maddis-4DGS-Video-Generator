@@ -58,3 +58,4 @@ output_3dgs/
 *.pt
 run.log
 __pycache__/
+convert.log

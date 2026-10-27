@@ -22,6 +22,21 @@ else
   echo -e "Status:  ${RED}STOPPED${NC}"
 fi
 
+fmt() { printf "%dh %02dm" $(($1/3600)) $(($1%3600/60)); }
+PID=$(pgrep -f run_headless_pipeline.py | head -1)
+STAMPS=$(find $OUT -name '*_standard.ply' -printf '%T@\n' 2>/dev/null | cut -d. -f1 | sort -n)
+first=$(echo "$STAMPS" | head -1)
+last=$(echo "$STAMPS" | tail -1)
+if [ -n "$first" ]; then
+  if [ -n "$PID" ]; then
+    total=$(( $(date +%s) - first ))
+    run=$(ps -o etimes= -p $PID | tr -d ' ')
+    echo "Time:    $(fmt $total) total | $(fmt $run) this run"
+  else
+    echo "Time:    $(fmt $((last - first))) total"
+  fi
+fi
+
 echo "Size:    $(du -sh $OUT 2>/dev/null | cut -f1) used | $(df -h / | awk 'NR==2{print $4}') free"
 
 zero=$(find $OUT -name '*_standard.ply' -size 0 2>/dev/null)
