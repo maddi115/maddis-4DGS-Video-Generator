@@ -59,3 +59,10 @@ output_3dgs/
 run.log
 __pycache__/
 convert.log
+
+# memory_puppet outputs
+memory_puppet/*.npz
+memory_puppet/*.ply
+memory_puppet/*.sog
+memory_puppet/*.mp4
+memory_puppet/*_status.txt
