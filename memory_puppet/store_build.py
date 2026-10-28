@@ -133,6 +133,23 @@ print(f"people zone: {zone.mean() * 100:.1f}% of the picture (kept live, orig qu
 orb = cv2.ORB_create(5000); bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
 img = {f: grab(VIDEO, f, small=False) for f in frames}
 plys = {f: load(fnum[f]) for f in frames}
+RULE = os.environ.get("RULE", "birth")      # birth = bucket by the pixel each splat was MADE from; land = old rule
+SEAM = os.environ.get("SEAM", "0") == "1"   # seam view: store red, live green
+def birth_pixels(a):
+    """SHARP makes each splat from one picture pixel, in a fixed grid. Work out that pixel."""
+    idx = np.arange(len(a)); col = idx % 768
+    u, v, ok = pix(xyz(a) * S_SH); best = None
+    for Lh in (768, 384, 1536):
+        row = (idx // 768) % Lh
+        A = np.stack([col[ok], np.ones(ok.sum())], 1); cu = np.linalg.lstsq(A, u[ok], rcond=None)[0]
+        B = np.stack([row[ok], np.ones(ok.sum())], 1); cv_ = np.linalg.lstsq(B, v[ok], rcond=None)[0]
+        res = np.median(np.hypot(A @ cu - u[ok], B @ cv_ - v[ok]))
+        if best is None or res < best[0]: best = (res, Lh, cu, cv_)
+    res, Lh, cu, cv_ = best; row = (idx // 768) % Lh
+    ub = np.clip(cu[0] * col + cu[1], 0, W - 1).astype(int); vb = np.clip(cv_[0] * row + cv_[1], 0, H - 1).astype(int)
+    print(f"birth-pixel map: grid layers of {Lh} rows, fits within {res:.1f} px (want a few px)")
+    return ub, vb
+UB, VB = birth_pixels(plys[KEY])
 D = {f: depth_map(xyz(plys[f]) * S_SH) for f in frames}
 feat = {f: orb.detectAndCompute(cv2.cvtColor(img[f], cv2.COLOR_BGR2GRAY), (1 - zone) * 255) for f in frames}
 move = {KEY: (1.0, np.eye(3), np.zeros(3))}
@@ -147,7 +164,11 @@ for f in frames:
 
 key = plys[KEY]; Pk = xyz(key) * S_SH
 uk, vk, okk = pix(Pk)
-store = key[~in_mask(zone, uk, vk, okk)]
+land_live = in_mask(zone, uk, vk, okk); birth_live = zone[VB, UB] > 0
+mis = birth_live & ~land_live
+print(f"PROOF: {mis.sum():,} splats made from people pixels were put in the STORE by the old rule "
+      f"({(mis & ~okk).sum():,} of them land past the picture edge)")
+store = key[~(birth_live if RULE == "birth" else land_live)]
 Ps = xyz(store) * S_SH
 us, vs, oks = pix(Ps)
 blur = lambda im: cv2.GaussianBlur(im, (5, 5), 0).astype(np.int16)
@@ -178,9 +199,16 @@ for f in frames:
     mv = cv2.resize(cv2.dilate(mv, np.ones((15, 15), np.uint8)), (W, H), interpolation=cv2.INTER_NEAREST)
     live_zone = np.maximum(zone, mv)
     cur = plys[f]; Pc = xyz(cur) * S_SH; uc, vc, okc = pix(Pc)
-    live = cur[in_mask(live_zone, uc, vc, okc)]
+    live = cur[(live_zone[VB, UB] > 0) if RULE == "birth" else in_mask(live_zone, uc, vc, okc)]
     st_keep = st[~in_mask(live_zone, ut, vt, okt)]
-    full[f] = np.concatenate([st_keep, live])
+    if SEAM:
+        def tint(a, rgb):
+            a = a.copy()
+            for ch, val in zip(("f_dc_0", "f_dc_1", "f_dc_2"), rgb): a[ch] = 0.5 * a[ch] + 0.5 * ((val - 0.5) / 0.28209479)
+            return a
+        full[f] = np.concatenate([tint(st_keep, (1, 0, 0)), tint(live, (0, 1, 0))])
+    else:
+        full[f] = np.concatenate([st_keep, live])
     lay[f] = moved(live, s, R, t)
     rep.append(f"  frame {f}: camera turn {np.degrees(np.arccos(np.clip((np.trace(R) - 1) / 2, -1, 1))):.2f} deg, "
                f"depth fix {s:.3f} | moved things {mv.mean() * 100:.1f}% of picture | live splats {len(live):,}")
