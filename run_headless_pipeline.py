@@ -1,4 +1,4 @@
-﻿import os
+import os
 import sys
 import threading
 from collections import Counter
@@ -183,7 +183,9 @@ def main():
         pending = still
 
     cap = cv2.VideoCapture(str(VIDEO))
-    for i in range(total):
+    START = int(os.environ.get("START_FRAME", "0"))
+    cap.set(cv2.CAP_PROP_POS_FRAMES, START)
+    for i in range(START, min(START + total, info["frame_count"])):
         got, frame = cap.read()
         if not got:
             print(f"[*] Video ended at frame {i}")
