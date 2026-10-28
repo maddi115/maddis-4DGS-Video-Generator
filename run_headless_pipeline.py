@@ -1,4 +1,4 @@
-import os
+﻿import os
 import sys
 import threading
 from collections import Counter
@@ -66,9 +66,9 @@ def _gpu_svd(A, *args, **kwargs):
 torch.linalg.svd = _gpu_svd
 
 VIDEO = ROOT / "sample-video" / "walmartvideo.mp4"
-OUT_NAME = "meowvideo"
+OUT_NAME = os.environ.get("OUT_NAME", "meowvideo")
 CHECKPOINT = ROOT / "sharp_2572gikvuh.pt"
-TEST_FRAMES = None        # None = all frames, or a number like 5 for a test
+TEST_FRAMES = int(os.environ["TEST_FRAMES"]) if os.environ.get("TEST_FRAMES") else None        # None = all frames, or a number like 5 for a test
 MAX_BAD_IN_A_ROW = 5      # stop if this many frames in a row come out empty
 SAVE_WORKERS = 4          # helper threads that save + convert files
 MAX_IN_FLIGHT = 6         # frames allowed to wait for saving at once
@@ -114,6 +114,29 @@ def save_and_convert(i, gaussians, f_px, h, w, out_dir):
     tmp_ply.unlink(missing_ok=True)
     return i, False
 
+import dataclasses
+def _to_float(x):
+    if torch.is_tensor(x):
+        return x.float() if x.is_floating_point() else x
+    if dataclasses.is_dataclass(x) and not isinstance(x, type):
+        return dataclasses.replace(x, **{f.name: _to_float(getattr(x, f.name)) for f in dataclasses.fields(x)})
+    if isinstance(x, tuple) and hasattr(x, "_fields"):
+        return type(x)(*[_to_float(v) for v in x])
+    if isinstance(x, (list, tuple)):
+        return type(x)(_to_float(v) for v in x)
+    if isinstance(x, dict):
+        return {k: _to_float(v) for k, v in x.items()}
+    return x
+
+def enable_fp16(model):
+    orig = model.forward
+    def fwd(*a, **k):
+        with torch.autocast("cuda", dtype=torch.float16):
+            out = orig(*a, **k)
+        return _to_float(out)
+    model.forward = fwd
+    return model
+
 def main():
     out_dir = ROOT / "output_3dgs" / OUT_NAME
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -121,6 +144,9 @@ def main():
 
     device = torch.device("cuda")
     model = load_model(device)
+    if os.environ.get("FP16", "1") == "1":
+        model = enable_fp16(model)
+        print("[+] FP16 enabled")
     print("[+] Model loaded on GPU")
 
     with VideoProcessor(VIDEO) as vp:
@@ -180,6 +206,7 @@ def main():
     cap.release()
     collect(wait_all=True)
     pool.shutdown(wait=True)
+    print(f"[*] Peak GPU memory: {torch.cuda.max_memory_allocated()/1024**3:.2f} GB")
     print(f"[+] Done. ok={stats['ok']} bad={stats['bad']} skipped={stats['skipped']}")
 
 if __name__ == "__main__":
