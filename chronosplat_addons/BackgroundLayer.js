@@ -1,21 +1,14 @@
-﻿/**
- * BackgroundLayer.js â€” a still background shared by many frames.
- *
- * Sequences built with build_layers.py store, per segment of frames, ONE
- * background splat file (everything that does not move) plus a small
- * per-frame file with only the moving splats. FrameCache streams the moving
- * frames as usual; this class keeps the matching background on screen.
- *
- * manifest.background = {
- *   files:    ["bg/frame_0001.sog", ...],   // one per segment
- *   segments: [0, 0, 0, ..., 1, 1, ...],    // segment index for every frame
- * }
- *
- * Inert when the manifest has no background block, so ordinary sequences are
- * unaffected.
+/**
+ * BackgroundLayer.js - one still store per segment, moved into each frame's camera.
+ * manifest.background = { files: [...], segments: [...], poses: [[scale, qx, qy, qz, qw, px, py, pz], ...] }
+ * People frames are never moved; only this store follows the camera (poses are optional).
  */
-
 import { SplatMesh } from '@sparkjsdev/spark';
+import { Quaternion } from 'three';
+
+const FLIP = new Quaternion(1, 0, 0, 0);
+const NOFLIP = new Quaternion(0, 0, 0, 1);
+const _q = new Quaternion();
 
 export class BackgroundLayer {
   constructor({ scene, base, background, flipX = true }) {
@@ -24,20 +17,17 @@ export class BackgroundLayer {
     this.enabled = Boolean(background?.files?.length && background?.segments?.length);
     this.urls = this.enabled ? background.files.map((f) => new URL(f, base).href) : [];
     this.segments = this.enabled ? background.segments : [];
-    /** @type {Map<number, {mesh: SplatMesh, ready: boolean}>} */
+    this.poses = this.enabled && Array.isArray(background.poses) ? background.poses : null;
     this.meshes = new Map();
     this.failed = new Set();
     this.visibleSeg = -1;
   }
 
-  segOf(frameIndex) {
-    return this.segments[frameIndex] ?? 0;
-  }
+  segOf(frameIndex) { return this.segments[frameIndex] ?? 0; }
 
-  /** True when the background a frame needs is decoded (always true if unused). */
   isReadyFor(frameIndex) {
     if (!this.enabled) return true;
-    if (this.failed.has(this.segOf(frameIndex))) return true; // do not stall forever
+    if (this.failed.has(this.segOf(frameIndex))) return true;
     return this.meshes.get(this.segOf(frameIndex))?.ready === true;
   }
 
@@ -59,37 +49,40 @@ export class BackgroundLayer {
         console.warn(`[BackgroundLayer] background ${seg + 1} failed: ${this.urls[seg]}`, err);
         this.meshes.delete(seg);
         this.failed.add(seg);
-        try { mesh.dispose(); } catch { /* already gone */ }
+        try { mesh.dispose(); } catch { }
       });
   }
 
-  /**
-   * Call once per rendered frame.
-   * @param {number} activeIndex  frame the playhead is on (preload for it)
-   * @param {number} shownIndex   frame actually on screen (match its background)
-   */
   update(activeIndex, shownIndex = activeIndex) {
     if (!this.enabled) return;
     const want = this.segOf(activeIndex);
     const show = this.segOf(shownIndex >= 0 ? shownIndex : activeIndex);
     this._load(show);
     this._load(want);
-    this._load((want + 1) % this.urls.length); // next segment (wraps around when looping)
-
+    this._load((want + 1) % this.urls.length);
     const e = this.meshes.get(show);
     if (e?.ready && this.visibleSeg !== show) {
       for (const [s, x] of this.meshes) if (x.ready) x.mesh.visible = s === show;
       this.visibleSeg = show;
     }
-
-    // Keep at most: shown, wanted and the next one. Free the rest.
+    const vis = this.meshes.get(this.visibleSeg);
+    if (vis?.ready) this._applyPose(vis.mesh, this.poses?.[shownIndex >= 0 ? shownIndex : activeIndex]);
     const keep = new Set([show, want, (want + 1) % this.urls.length, this.visibleSeg]);
     for (const [s, x] of [...this.meshes]) {
       if (keep.has(s)) continue;
       if (x.ready) this.scene.remove(x.mesh);
-      try { x.mesh.dispose(); } catch { /* already gone */ }
+      try { x.mesh.dispose(); } catch { }
       this.meshes.delete(s);
     }
+  }
+
+  _applyPose(mesh, p) {
+    const flip = this.flipX ? FLIP : NOFLIP;
+    if (!p) { mesh.quaternion.copy(flip); mesh.position.set(0, 0, 0); mesh.scale.setScalar(1); return; }
+    _q.set(p[1], p[2], p[3], p[4]);
+    mesh.quaternion.copy(flip).multiply(_q);
+    mesh.position.set(p[5], p[6], p[7]).applyQuaternion(flip);
+    mesh.scale.setScalar(p[0]);
   }
 
   setFlipX(value) {
@@ -104,7 +97,7 @@ export class BackgroundLayer {
   dispose() {
     for (const [, x] of this.meshes) {
       if (x.ready) this.scene.remove(x.mesh);
-      try { x.mesh.dispose(); } catch { /* already gone */ }
+      try { x.mesh.dispose(); } catch { }
     }
     this.meshes.clear();
     this.visibleSeg = -1;

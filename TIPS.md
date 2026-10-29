@@ -87,3 +87,11 @@ About 78% smaller than orig (full video at 60 fps: about 5 GB instead of 22.8 GB
 
 ### Disk warning
 Changing the pod's disk size gives you a NEW empty pod. Download results and push code first.
+
+### Real numbers from the full walmart run (RTX 4090)
+- 2,204 frames at 60 fps: build 101 min (2.77 s per frame), convert about 15 min.
+- Result 4.8 GB (orig 22.8 GB). Disk used while working: about 40 GB.
+- 379 camera warnings, all "odd depth scale" or "weak camera match" (shaky footage, handled).
+- Download to PC with scp: 1-3 MB/s, about 45 min for 4.8 GB.
+- Your PC needs the new viewer file: copy `chronosplat_addons/BackgroundLayer.js` into Chronosplat's `src` folder.
+- Full method and history: see OPTIMIZATIONS.md

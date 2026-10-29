@@ -47,7 +47,7 @@ for fr in bg_manifest["frames"]:
 shutil.rmtree(bg_dir)
 
 manifest["background"] = {"files": files, "segments": segments,
-                          "bytes": bg_bytes, "keyEvery": layers.get("keyEvery")}
+                          "bytes": bg_bytes, "keyEvery": layers.get("keyEvery"), "poses": layers.get("poses")}
 (seq_dir / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
 
 mov_bytes = sum(int(f.get("bytes") or 0) for f in manifest["frames"])
