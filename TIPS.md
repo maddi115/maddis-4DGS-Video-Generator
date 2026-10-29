@@ -56,3 +56,34 @@ These are set for the current video. Change them for a new one:
 - Generator: about 14 frames/min on an RTX 3090 (after speed fixes)
 - Converter: about 90+ frames/min with 12 workers, about 10 MB per SOG frame (about 23 GB total)
 - Need about 200 GB pod disk for a 2,200-frame video
+
+## Smaller files: shared store + live people (memory-puppet branch)
+People stay exactly like orig. The still store is saved once per second and follows the camera.
+About 78% smaller than orig (full video at 60 fps: about 5 GB instead of 22.8 GB).
+
+### Fresh pod? One command does everything
+`cd /workspace && git clone -b memory-puppet https://github.com/maddi115/maddis-4DGS-Video-Generator && bash maddis-4DGS-Video-Generator/memory_puppet/rebuild.sh`
+- Installs everything (about 20 min), tests SHARP + person finder, then starts the full video by itself.
+- No Hugging Face login needed.
+
+| Command | What it does |
+|---|---|
+| `fullwatch` | Live screen: setup, building, converting, done (Ctrl + C only closes the screen) |
+| `tail -f /workspace/setup.log` | Install messages, live |
+| `cat /workspace/walmartfull_status.txt` | Check the build once |
+
+### Run a different clip or name
+`NOPAD=1 STEP=1 SEG=60 nohup bash /workspace/run_all60.sh <start_frame> <seconds> <name> > /dev/null 2>&1 &`
+- `STEP=1` = 60 fps (`STEP=2` = 30 fps, half the size). `SEG=60` = one store per second.
+- `NOPAD=1` = no padding (saves about 50 GB of disk, same result).
+
+### Numbers (RTX 4090)
+- Build: about 3 s per frame. Convert: under 1 s per frame with 12 workers.
+- Disk while working: about 30 GB for the full video (not 200 GB).
+- Download: `scp -r -P <PORT> root@<IP>:/workspace/Chronosplat/data/<name> /mnt/c/Users/adamp/Chronosplat/data/` (from WSL)
+
+### On your PC (once)
+`src\BackgroundLayer.js` must be the camera-pose version, or the store won't follow the camera.
+
+### Disk warning
+Changing the pod's disk size gives you a NEW empty pod. Download results and push code first.
