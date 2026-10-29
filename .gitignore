@@ -60,9 +60,9 @@ run.log
 __pycache__/
 convert.log
 
-# memory_puppet outputs
-memory_puppet/*.npz
-memory_puppet/*.ply
-memory_puppet/*.sog
-memory_puppet/*.mp4
-memory_puppet/*_status.txt
+# livepeople+stillbackground outputs
+livepeople+stillbackground/*.npz
+livepeople+stillbackground/*.ply
+livepeople+stillbackground/*.sog
+livepeople+stillbackground/*.mp4
+livepeople+stillbackground/*_status.txt

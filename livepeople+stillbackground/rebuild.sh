@@ -4,15 +4,15 @@ step(){ echo "$(date +%H:%M) $1" >> $ST; echo "=== $1" >> $LOG; }
 fail(){ echo "$(date +%H:%M) FAILED: $1 - paste this screen to Claude" >> $ST; exit 1; }
 : > $ST; : > $LOG; cd /workspace
 step "1/7 getting our code from GitHub"
-[ -d maddis-4DGS-Video-Generator ] || git clone -b memory-puppet https://github.com/maddi115/maddis-4DGS-Video-Generator >> $LOG 2>&1 || fail "code download"
+[ -d maddis-4DGS-Video-Generator ] || git clone -b livepeople+stillbackground https://github.com/maddi115/maddis-4DGS-Video-Generator >> $LOG 2>&1 || fail "code download"
 step "2/7 SHARP + Node + Chronosplat (about 5 min)"
 bash maddis-4DGS-Video-Generator/setup_pod.sh >> $LOG 2>&1 || fail "main setup"
 step "3/7 person finder (about 10 min)"
-cp maddis-4DGS-Video-Generator/memory_puppet/setup_body_pod.sh /workspace/
+cp maddis-4DGS-Video-Generator/livepeople+stillbackground/setup_body_pod.sh /workspace/
 bash /workspace/setup_body_pod.sh >> $LOG 2>&1
 python -c "import detectron2" >> $LOG 2>&1 || fail "person finder install"
 step "4/7 putting our scripts in place"
-M=/workspace/maddis-4DGS-Video-Generator/memory_puppet; cp $M/fullwatch.sh /workspace/; ln -sf /workspace/fullwatch.sh /usr/local/bin/fullwatch; C=/workspace/Chronosplat
+M=/workspace/maddis-4DGS-Video-Generator/livepeople+stillbackground; cp $M/fullwatch.sh /workspace/; ln -sf /workspace/fullwatch.sh /usr/local/bin/fullwatch; C=/workspace/Chronosplat
 cp $M/segment_run2.py $M/segment_run3.py $M/convwatch.sh /workspace/ && cp $M/add_background.py $C/tools/ || fail "copy scripts"
 sed -i 's/    N = max(counts\[k\] for k in keys)/    N = 1 if os.environ.get("NOPAD") else max(counts[k] for k in keys)/' /workspace/segment_run3.py
 grep -q 'N = 1 if os.environ.get("NOPAD")' /workspace/segment_run3.py || fail "no-padding patch"

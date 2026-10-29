@@ -57,12 +57,12 @@ These are set for the current video. Change them for a new one:
 - Converter: about 90+ frames/min with 12 workers, about 10 MB per SOG frame (about 23 GB total)
 - Need about 200 GB pod disk for a 2,200-frame video
 
-## Smaller files: shared store + live people (memory-puppet branch)
+## Smaller files: shared store + live people (livepeople+stillbackground branch)
 People stay exactly like orig. The still store is saved once per second and follows the camera.
 About 78% smaller than orig (full video at 60 fps: about 5 GB instead of 22.8 GB).
 
 ### Fresh pod? One command does everything
-`cd /workspace && git clone -b memory-puppet https://github.com/maddi115/maddis-4DGS-Video-Generator && bash maddis-4DGS-Video-Generator/memory_puppet/rebuild.sh`
+`cd /workspace && git clone -b livepeople+stillbackground https://github.com/maddi115/maddis-4DGS-Video-Generator && bash maddis-4DGS-Video-Generator/livepeople+stillbackground/rebuild.sh`
 - Installs everything (about 20 min), tests SHARP + person finder, then starts the full video by itself.
 - No Hugging Face login needed.
 
